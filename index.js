@@ -223,14 +223,17 @@ app.get("/inventory/:id/photo", (req, res) => {
   if (!item) return res.status(404).send("❌ Item not found");
   if (!item.photo) return res.status(404).send("❌ Photo not found");
 
-  const filePath = path.join(options.cache, item.photo);
-  if (!fs.existsSync(filePath)) return res.status(404).send("❌ Photo file missing");
+  // Створюємо АБСОЛЮТНИЙ шлях до файлу
+  const filePath = path.resolve(options.cache, item.photo);
+  
+  // Перевіряємо, чи існує файл
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send("❌ Photo file missing");
+  }
 
-  // Встановлюємо відповідний заголовок; sendFile сам поставить content-type, але додамо для гарантії
+  // Відправляємо файл з правильним Content-Type
   res.setHeader("Content-Type", "image/jpeg");
-  res.sendFile(filePath, (err) => {
-    if (err) res.status(500).send("❌ Error sending file");
-  });
+  res.sendFile(filePath);
 });
 
 /**
@@ -321,7 +324,6 @@ const specs = swaggerJsdoc({
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // --- 8. Обробник для невизначених маршрутів / методів ---
-// Використовуємо app.use як універсальний "catch-all" після всіх маршрутів
 app.use((req, res) => {
   res.status(405).send("❌ Method Not Allowed");
 });
